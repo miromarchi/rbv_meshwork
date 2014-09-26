@@ -66,7 +66,7 @@ line.org-neverStarted.hover {
     opacity: .15;
 }
 .node.searched > * {
-	stroke: yellow;
+	stroke: #FF0064;
 	stroke-width: 6px;
 	stroke-opacity: 1;
 }

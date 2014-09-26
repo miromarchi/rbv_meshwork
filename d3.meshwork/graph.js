@@ -37,11 +37,6 @@ var meshwork_pixelPerMs;
 var meshwork_container;
 var meshwork_xAxis;
 
-function xForDate(date)
-{	
-	return (date.getTime()-meshwork_graphStartDate.getTime())*meshwork_pixelPerMs-(meshwork_circleRadius+10+meshwork_textWidth);
-}
-
 function addClass(domElement,newClass)
 {
   	var currentClasses=d3.select(domElement).attr("class");
@@ -98,9 +93,15 @@ testNoOverlap1();
 	testNoOverlap3();
 	testNoOverlap4();
 	testNoOverlap5();*/
+	meshwork_pixelPerMs=meshwork_currentWidth/(meshwork_now.getTime()-meshwork_graphStartDate.getTime());
+
 	buildGradients();
 	meshwork_dummy=meshwork_svg.append("g");
 	
+	var timeScale = d3.time.scale()
+		.domain([meshwork_graphStartDate, meshwork_now])
+		.range([0, meshwork_currentWidth-(meshwork_circleRadius+10+meshwork_textWidth)]);
+
 	meshwork_force = d3.layout.force()
 		.friction(0.9)
 		.charge(-250)
@@ -155,17 +156,13 @@ testNoOverlap1();
 		  .links(meshwork_graphData.links)
   		  .start()
 		  .alpha(0.01);
-	}
+	} 
 
 	meshwork_container=meshwork_svg.append("g").attr("id","container");
 
-   	var timeScale = d3.time.scale()
-		.domain([meshwork_graphStartDate, meshwork_now])
-		.range([0, meshwork_currentWidth-(meshwork_circleRadius+10+meshwork_textWidth)]);
-	
 	meshwork_diagonal=d3.svg.diagonal()
-		.source(function(l){return {y:xForDate(l.date)-4,x:l.source.y};})
-		.target(function(l){return {y:xForDate(l.date)+4,x:l.target.y};})
+		.source(function(l){return {y:timeScale(l.date)-4,x:l.source.y};})
+		.target(function(l){return {y:timeScale(l.date)+4,x:l.target.y};})
 		.projection(function(d){return [d.y,d.x];});
 
 	meshwork_link = meshwork_container.selectAll(".link")
@@ -221,11 +218,11 @@ testNoOverlap1();
 			var x=0;
 			if (d.nodeType=="org-neverStarted")
 			{
-				x=xForDate(new Date(readNodeEnd(d).getTime()-365*24*60*60*1000));
+				x=timeScale(new Date(readNodeEnd(d).getTime()-365*24*60*60*1000));
 			}
 			else
 			{
-				x=xForDate(d.start);
+				x=timeScale(d.start);
 			}
 			d.origX=x;
 			setTranslate(this,x,0);
@@ -248,14 +245,14 @@ testNoOverlap1();
 			var startx=0;
 			if (d.nodeType=="org-neverStarted")
 			{
-				startx=xForDate(new Date(readNodeEnd(d).getTime()-365*24*60*60*1000));
+				startx=timeScale(new Date(readNodeEnd(d).getTime()-365*24*60*60*1000));
 			}
 			else
 			{
-				startx=xForDate(d.start);
+				startx=timeScale(d.start);
 			}
 
-			return xForDate(readNodeEnd(d))-startx;
+			return timeScale(readNodeEnd(d))-startx;
 		})
 	  .attr("y1",0)
 	  .attr("y2",meshwork_epsilon)
@@ -296,14 +293,14 @@ testNoOverlap1();
 				var startx=0;
 				if (d.nodeType=="org-neverStarted")
 				{
-					startx=xForDate(new Date(d.end.getTime()-365*24*60*60*1000));
+					startx=timeScale(new Date(d.end.getTime()-365*24*60*60*1000));
 				}
 				else
 				{
-					startx=xForDate(d.start);
+					startx=timeScale(d.start);
 				}
 
-				return xForDate(d.end)-startx;
+				return timeScale(d.end)-startx;
 			})
 			.attr("r",meshwork_circleRadius);
 	});
@@ -326,10 +323,6 @@ testNoOverlap1();
 		var nodes=meshwork_graphData.nodes.slice(0);
 
 		noOverlap(nodes,meshwork_nodesMinimumPixelDistance,meshwork_nodesMinimumPixelDistanceBackLash);
-
-		
-		
-		
 	});
 	var zoom = d3.behavior.zoom()
 		.scaleExtent([0.1, 10])
@@ -352,7 +345,6 @@ testNoOverlap1();
 	});
 
 	meshwork_svg.call(zoom);
-
 
 	meshwork_xAxis = d3.svg.axis()
 		.scale(timeScale)
@@ -397,7 +389,6 @@ function meshwork_fullscreenChanged()
 	meshwork_svg.attr("width",meshwork_currentWidth)
 				.attr("height",meshwork_currentHeight)
 
-	meshwork_pixelPerMs=meshwork_currentWidth/(meshwork_now.getTime()-meshwork_graphStartDate.getTime());
 	if (typeof meshwork_force != "undefined")
 	{
 		meshwork_svg.selectAll("*").remove()

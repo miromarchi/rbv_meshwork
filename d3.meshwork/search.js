@@ -12,5 +12,6 @@ function textBoxKeyPress(e,form)
 	d3.selectAll(".node").filter(function(d){
 		return 	d.name.match(re) != null;
 	}).classed("searched",true);
+	console.log(d3.selectAll(".node.searched"));
 	
 }
